@@ -29,6 +29,11 @@ int main() {
     assert(G435::Percent(4200) == 100);
     assert(G435::Percent(3400) == 0);
 
+    const std::array<std::uint8_t, 6> realtekReply = { 0x06, 0x80, 0x00, 0xC4, 0x0E, 0x00 };
+    assert(G435::ParseRealtekMilliVolts(realtekReply.data(), realtekReply.size()) == 3780);
+    assert(G435::RealtekPercent(3780) == 46);
+    assert(G435::ParseRealtekMilliVolts(nullptr, realtekReply.size()) == -1);
+
     reply[6] = 0x00;
     reply[7] = 0x00;
     assert(G435::ParseMilliVolts(reply.data(), reply.size()) == -1);

@@ -54,4 +54,28 @@ inline int Percent(int mv) {
     return -1;
 }
 
+inline int ParseRealtekMilliVolts(const std::uint8_t* data, std::size_t size) {
+    for (std::size_t i = 0; data && i + 4 < size; ++i) {
+        if (data[i] != 0x06 || data[i + 1] != 0x80 || data[i + 2] != 0x00) continue;
+        int mv = data[i + 3] | (data[i + 4] << 8);
+        if (mv >= 3000 && mv <= 4500) return mv;
+    }
+    return -1;
+}
+
+inline int RealtekPercent(int mv) {
+    static constexpr int volts[] = { 4200, 4100, 4000, 3900, 3800, 3750, 3700, 3650, 3600, 3500, 3300 };
+    static constexpr int percents[] = { 100, 90, 80, 65, 50, 40, 30, 20, 10, 5, 0 };
+    if (mv >= volts[0]) return 100;
+    if (mv <= volts[10]) return 0;
+    for (int i = 0; i < 10; ++i) {
+        if (mv >= volts[i + 1]) {
+            int span = volts[i] - volts[i + 1];
+            int rise = (mv - volts[i + 1]) * (percents[i] - percents[i + 1]);
+            return percents[i + 1] + (rise + span / 2) / span;
+        }
+    }
+    return -1;
+}
+
 }  // namespace G435
