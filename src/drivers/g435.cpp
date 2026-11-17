@@ -42,8 +42,10 @@ int ReadRealtekBattery(HidDev& dev) {
         if (SendRealtek(dev, { 0x50, 0x41, 0x06, 0x00, 0x01, 0x00, 0x31 })) {
             ULONGLONG end = GetTickCount64() + 800;
             while (!millivolts && GetTickCount64() < end) {
-                if (dev.GetFeature(kRealtekReport, report) && report.size() > 1)
-                    millivolts = G435::ParseRealtekMilliVolts(report.data() + 1, report.size() - 1);
+                if (dev.GetFeature(kRealtekReport, report) && report.size() > 1) {
+                    int value = G435::ParseRealtekMilliVolts(report.data() + 1, report.size() - 1);
+                    if (value > 0) millivolts = value;
+                }
                 if (!millivolts) Sleep(30);
             }
         }
@@ -53,7 +55,7 @@ int ReadRealtekBattery(HidDev& dev) {
 
     dev.SetFeature({ kRealtekReport, 8, 3, 0, 0, 0, 0 });
     Sleep(100);
-    return millivolts;
+    return millivolts >= 3000 && millivolts <= 4500 ? millivolts : 0;
 }
 
 void PollRealtekG435(PollContext& ctx) {
@@ -79,7 +81,7 @@ void PollRealtekG435(PollContext& ctx) {
             int millivolts = ReadRealtekBattery(dev);
             attempted = true;
             lastAttempt = GetTickCount64();
-            hasReading = millivolts != 0;
+            hasReading = millivolts >= 3000 && millivolts <= 4500;
             if (hasReading) lastMillivolts = millivolts;
         }
     }
